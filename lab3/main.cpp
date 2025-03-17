@@ -42,22 +42,40 @@ double TrapezoidFormula(double a, double b, double (*fun)(double x), int rang){
     return res;
 }
 
+double Simpson(double a, double b, double (*fun)(double x), int rang){
+    double res = 0;
+    double step = (b - a)/(double)rang;
+    double current_a = a;
+    double current_b = a + step;
+    for(int n = 0; n <  rang; n++){
+
+        current_a =  a + step * n;
+        current_b =  a + step + n*step;
+        res += (current_b - current_a)/6.0 * (fun( current_a) + 4 * fun(( current_a+current_b )/2.0) + fun(current_b ));
+
+    }
+
+    h_3q = step;
+
+    return res;
+}
+
 bool RungeRule(double Sn, double S2n ,double eps){
-    return fabs(S2n - Sn) / 3.0 < eps;
+    return (fabs(S2n - Sn) / 15.0) < eps;
 }
 
 double Integrate(double a, double b, double (*fun)(double x), double eps){
     int n1 = 1;
     int n2 = 2;
 
-    double result = TrapezoidFormula(a,b,fun,n2);
-    double check = TrapezoidFormula(a,b,fun,n1);
+    double result = Simpson(a,b,fun,n2);
+    double check = Simpson(a,b,fun,n1);
     while (!RungeRule(check,result,eps))
     {
         n1 *= 2;
         n2 *= 2;
         check = result;
-        result = TrapezoidFormula(a,b,fun,n2);
+        result = Simpson(a,b,fun,n2);
     }
 
     N_2q = n2;
@@ -112,9 +130,9 @@ void Test3(){
     ofstream out;
     out.open(PATH"3q.txt");
 
-    for(int i = 1; i <= 100000; i *= 2){
+    for(int i = 1; i <= 2048; i *= 2){
 
-        double res = TrapezoidFormula(a,b,function,i); 
+        double res = Simpson(a,b,function,i); 
         double err = fabs(res - integrall(a,b) );
 
         out << h_3q << ' ' << err << endl;
@@ -127,6 +145,8 @@ void Test3(){
 int main(){
     
 
+    Test1();
+    Test2();
     Test3();
 
     return 0;

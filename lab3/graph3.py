@@ -13,7 +13,7 @@ with open('data/3q.txt') as f:
 plt.scatter(x,y)
 amm, = plt.plot(x,y)
 
-line, = plt.plot(x,[k**2 for k in x])
+line, = plt.plot(x,[k**4 for k in x])
 
 plt.grid()
 
