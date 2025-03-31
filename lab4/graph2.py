@@ -13,6 +13,16 @@ with open('data/2q.txt') as f:
 plt.scatter(x,y)
 err, = plt.plot(x,y)
 
+
+with open('data/r2q.txt') as f:
+    lines = f.readlines()
+    x = [float(line.split()[0]) for line in lines]
+    y = [float(line.split()[1]) for line in lines]
+
+plt.scatter(x,y)
+r_err, = plt.plot(x,y)
+
+
 plt.grid()
 
 plt.semilogx()
@@ -23,7 +33,7 @@ bis, = plt.plot([0,.10],[0,.10])
 plt.xlabel('Заданная точность')
 plt.ylabel('Фактическая точность')
 
-plt.legend([err,bis],['Фактическая точность','Биссектриса'])
+plt.legend([bis,err,r_err],['Биссектриса','Фактическая точность','Точность I+R'])
 
 #plt.show()
 
