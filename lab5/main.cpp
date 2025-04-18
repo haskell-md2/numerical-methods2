@@ -15,65 +15,66 @@ double t3_nmax = 0;
 
 typedef struct
 {
-    double x,y;
+    double x, y;
 } Point;
 
 
-double goal_fun(double x){
-    return (1)/((x+1)* log(x+1));
+double goal_fun(double x) {
+    return (1) / ((x + 1) * log(x + 1));
 }
 
-double equation(double x, double y){
-    return -y/(x+1) - powf(y,2);
+double equation(double x, double y) {
+    return -y / (x + 1) - powf(y, 2);
 }
 
 
-bool RungeRule(double y2, double y1, double eps){
-    return fabs(y2 - y1)/ (7) < eps;
+bool RungeRule(double y2, double y1, double eps) {
+    return fabs(y2 - y1) / (7) < eps;
 }
 
-double get_y_by_h(double x, double y, double h, double (*equa) (double, double)){
-    double k1 = equa(x,y);
-    double k2 = equa(x + h/3.0, y + h*k1 * (1.0/3.0));
-    double k3 = equa(x + (2/3.0)*h, y+ (2.0/3.0) *h * k2);
+double get_y_by_h(double x, double y, double h, double (*equa) (double, double)) {
+    double k1 = equa(x, y);
+    double k2 = equa(x + h / 3.0, y + h * k1 * (1.0 / 3.0));
+    double k3 = equa(x + (2 / 3.0) * h, y + (2.0 / 3.0) * h * k2);
 
-    return y + (h/4.0) * (k1 + 3*k3);
+    return y + (h / 4.0) * (k1 + 3 * k3);
 }
 
-double next_y(double x, double y, double *h, double (*equa) (double, double), double eps){
-    double y1 = get_y_by_h(x,y,*h,equa);
+double next_y(double x, double y, double* h, double (*equa) (double, double), double eps) {
+    double y1 = get_y_by_h(x, y, *h, equa);
 
-    double y2 = get_y_by_h(x,y,(*h)/2.0,equa);
-    y2 = get_y_by_h(x,y2,(*h)/2.0,equa);
+    double y2 = get_y_by_h(x, y, (*h) / 2.0, equa);
+    y2 = get_y_by_h(x, y2, (*h) / 2.0, equa);
 
-    while (!RungeRule(y2,y1,eps))
+    while (!RungeRule(y2, y1, eps))
     {
         *h = (*h) / 2.0;
         y1 = y2;
-        y2 = get_y_by_h(x,y,(*h)/2.0,equa);
+        y2 = get_y_by_h(x, y, (*h) / 2.0, equa);
     }
-    
+
     return y2;
 }
 
-vector<Point> solove_difur(double (*equa) (double, double), Point start_cond, double a, double b, int n){
-    
+vector<Point> solove_difur(double (*equa) (double, double), Point start_cond, double a, double b, int n) {
+
     vector<Point> res = vector<Point>();
     res.push_back(start_cond);
 
-    double h = (b-a)/n;
+    double h = (b - a) / n;
 
     t2_h = h;
 
-    for(int i = 1; i <= n; i++){
+    for (int i = 1; i <= n; i++) {
 
-        double new_y = get_y_by_h(res.back().x, res.back().y,h,equa);
-        res.push_back(Point{a + i*h, new_y});
-     
+        double new_y = get_y_by_h(res.back().x, res.back().y, h, equa);
+        res.push_back(Point{ a + i * h, new_y });
+
     }
 
     return res;
 }
+
 
 vector<Point> solve_ode_adaptive(
     double (*f)(double, double),
@@ -81,85 +82,102 @@ vector<Point> solve_ode_adaptive(
     double a,
     double b,
     double eps,
-    double h_init
+    double n_init
 ) {
-    vector<Point> solution = {start};
+    vector<Point> solution = { start };
     double x = start.x;
     double y = start.y;
-    double h = h_init;
+    double n = n_init;
 
-    while (x < b) {
-        if (x + h > b) {
-            h = b - x;
-        }
+    double h = (b - a) / n;
 
-        double y1 = get_y_by_h(x, y, h, f);
+    for (int i = 0; i < n; i++) {
         
-        double y2 = get_y_by_h(x, y, h*0.5, f);
-        y2 = get_y_by_h(x + h*0.5, y2, h*0.5, f);
 
-        double error = fabs(y1 - y2)/7.0;
+        int temp_n = 1;
+        while (true)
+        {
+            double temp_h = h / temp_n;
 
-        if (error < eps) {
-            
-            //for test3
-            int n = (b - a)/h;
-            if(n > t3_nmax) t3_nmax = n;
-            /////
 
-            x += h;
-            y = y2;
-            solution.push_back({x ,y});
+            double y1 = y;
+            double y2 = y;
 
-            h = h_init;
-        } else {
-            h *= 0.5;
+            for (int j = 0; j < temp_n; j++) {
+                y1 = get_y_by_h((a + i *h )+ j* temp_h, y1, temp_h, f);
+            }
+            for (int j = 0; j < 2*temp_n; j++) {
+                y2 = get_y_by_h((a + i * h) + j * temp_h/2.0 , y2, temp_h /2.0, f);
+            }
+
+            double error = fabs(y1 - y2) / 7.0;
+
+            if (error < eps) {
+                        
+                //for test3
+                if (temp_n * n > t3_nmax) t3_nmax = temp_n * n;
+                /////
+
+                y = y2;
+                break;
+            }
+            else
+            {
+                temp_n *= 2;
+            }
         }
+
+
+
+        x = a + h*(i+1);
+        solution.push_back({ x ,y });
+
 
     }
+
 
     return solution;
 }
 
 
-void save_vector(vector<Point> * res, ofstream * f){
-    for(auto p : *res){
+void save_vector(vector<Point>* res, ofstream* f) {
+    for (auto p : *res) {
         *f << p.x << " " << p.y << endl;
     }
 }
 
-void show_err(vector<Point> * res){
-    for(auto p : *res){
+void show_err(vector<Point>* res) {
+    for (auto p : *res) {
         cout << p.x << " " << fabs(p.y - goal_fun(p.x)) << endl;
     }
 }
 
-double get_accurancy(vector<Point> v,double (*goal_fun) (double)){
+double get_accurancy(vector<Point> v, double (*goal_fun) (double)) {
     double max_err = 0;
-    for(auto p : v){
+    for (auto p : v) {
         double err = fabs(p.y - goal_fun(p.x));
-        if( err > max_err) max_err = err;
+        if (err > max_err) max_err = err;
     }
 
     return max_err;
 }
 
 
-void TEST3(){
+void TEST3() {
     ofstream out1;
     out1.open(PATH"3q_1.txt");
 
     ofstream out2;
     out2.open(PATH"3q_2.txt");
 
-    for(int k = 1; k <= 12; k++){
-        vector<Point> result = solve_ode_adaptive(equation,Point{1,goal_fun(1)},1,5,pow(10,-k),2);
+    for (int k = 1; k <= 12; k++) {
+        vector<Point> result = solve_ode_adaptive(equation, Point{ 1,goal_fun(1) }, 1, 5, pow(10, -k), 20);
 
-        double err = get_accurancy(result,goal_fun);
+        double err = get_accurancy(result, goal_fun);
 
-        out1 << pow(10,-k) << " " << err << endl;
+        out1 << pow(10, -k) << " " << err << endl;
 
-        out2 << pow(10,-k) << " " << round(log(t3_nmax)) << endl;
+        out2 << pow(10, -k) << " " << round(log(t3_nmax)) << endl;
 
         t3_nmax = 0;
     }
@@ -169,14 +187,14 @@ void TEST3(){
     out2.close();
 }
 
-void TEST2(){
+void TEST2() {
     ofstream out;
     out.open(PATH"2q.txt");
 
-    for(int k = 1; k <= 12; k++){
-        vector<Point> result = solove_difur(equation,Point{1,goal_fun(1)},1,5,pow(2,k));
+    for (int k = 1; k <= 12; k++) {
+        vector<Point> result = solove_difur(equation, Point{ 1,goal_fun(1) }, 1, 5, pow(2, k));
 
-        double err = get_accurancy(result,goal_fun);
+        double err = get_accurancy(result, goal_fun);
 
         out << t2_h << " " << err << endl;
     }
@@ -184,49 +202,69 @@ void TEST2(){
     out.close();
 }
 
-void TEST1(){
+void TEST1() {
     ofstream out1, out2, out3;
     out1.open(PATH"1q_1.txt");
     out2.open(PATH"1q_2.txt");
-    out3.open(PATH"1q_3.txt");
+    // out3.open(PATH"1q_3.txt");
 
-    vector<Point> result2h = solove_difur(equation,Point{1,goal_fun(1)},1,5,5);
-    vector<Point> resulth = solove_difur(equation,Point{1,goal_fun(1)},1,5,10);
+    vector<Point> result2h = solove_difur(equation, Point{ 1,goal_fun(1) }, 1, 5, 5);
+    vector<Point> resulth = solove_difur(equation, Point{ 1,goal_fun(1) }, 1, 5, 10);
 
-    for(auto p : result2h){
-        out1 << p.x << " " << setprecision(14)  << p.y << endl;
+    for (auto p : result2h) {
+        out1 << p.x << " " << setprecision(14) << p.y << endl;
     }
 
     int i = 0;
-    for(auto p : resulth){
-        if(i%2 == 0) out2 << p.x << " " << setprecision(14)  << p.y << endl;
-        i++;
+    for (auto p : resulth) {
+        out2 << p.x << " " << setprecision(14) << p.y << endl;
 
     }
 
-    for(auto p : result2h){
-        out3 << p.x << " " << setprecision(14)  << goal_fun(p.x) << endl;
-    }
-    
+    // for (auto p : result2h) {
+    //     out3 << p.x << " " << setprecision(14) << goal_fun(p.x) << endl;
+    // }
+
 
     out1.close();
     out2.close();
-    out3.close();
+    // out3.close();
 }
 
-int main(){
+void TEST4(){
+    ofstream out;
+    out.open(PATH"4q.txt");
 
-    TEST1();
+    for (int k = 1; k <= 12; k++) {
+        // vector<Point> result = solve_ode_adaptive(equation, Point{ 1,goal_fun(1) }, 1, 5, pow(10, -k), 20);
+        vector<Point> result = solove_difur(equation, Point{ 1,goal_fun(1) }, 1, 5, pow(2, k));
 
-    // ofstream file("res.txt");
+        Point max_err = {0,0};
+        
+        for(auto point : result){
+            double err = fabs(point.y - goal_fun(point.x));
+            
+            cout << err << endl;
 
-    //vector<Point> result = solve_ode_adaptive(equation,Point{1,goal_fun(1)},1,5,0.01,1);
+            if(err > max_err.y){
+                cout << err << " " << point.x <<  endl;
+                max_err.x = point.x;
+                max_err.y = err;
+            }
+        }
 
-    // vector<Point> result = solove_difur(equation,Point{1,goal_fun(1)},1,1.2,2);
+        out << k << " " << max_err.x << endl;
+    }
 
-    // save_vector(&result,&file);
+    out.close();
+}
 
-    // show_err(&result);
-    // cout << equation(1,0.15342640972);
+int main() {
+
+    // TEST1();
+    // TEST2();
+    // TEST3();
+    TEST4();
+
     return 0;
 }
