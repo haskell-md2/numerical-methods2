@@ -68,7 +68,6 @@ vector<Point> adams(double (*equa) (double, double), Point start_cond, double a,
 
     vector<Point> res = solove_difur(equa,start_cond,a,a + h*2,2);
 
-    //show_vector(&res);
 
     for(int i = 3; i <= n; i++ ){
 
@@ -83,6 +82,114 @@ vector<Point> adams(double (*equa) (double, double), Point start_cond, double a,
 }
 
 
+vector<Point> solve_ode_adaptive(double (*f)(double, double),Point start,double a,double b,double eps,double n_init) {
+    vector<Point> solution = { start };
+    double x = start.x;
+    double y = start.y;
+    double n = n_init;
+
+    double h = (b - a) / n;
+
+    for (int i = 0; i < n; i++) {
+        
+
+        int temp_n = 1;
+        while (true)
+        {
+            double temp_h = h / temp_n;
+
+
+            double y1 = y;
+            double y2 = y;
+
+            for (int j = 0; j < temp_n; j++) {
+                y1 = get_y_by_h((a + i *h )+ j* temp_h, y1, temp_h, f);
+            }
+            for (int j = 0; j < 2*temp_n; j++) {
+                y2 = get_y_by_h((a + i * h) + j * temp_h/2.0 , y2, temp_h /2.0, f);
+            }
+
+            double error = fabs(y1 - y2) / 7.0;
+
+            if (error < eps) {
+                        
+                //for test3
+                if (temp_n * n > t3_nmax) t3_nmax = temp_n * n;
+                /////
+
+                y = y2;
+                break;
+            }
+            else
+            {
+                temp_n *= 2;
+            }
+        }
+
+        x = a + h*(i+1);
+        solution.push_back({ x ,y });
+
+
+    }
+
+    return solution;
+}
+
+
+vector<Point> adams_adaptive(double (*equa) (double, double), Point start_cond, double a, double b, double eps,int n_init){
+
+    double h = (b - a) / n_init;
+
+    vector<Point> res = solve_ode_adaptive(equa,start_cond,a,a + h*2,eps,n_init);
+
+    for(int i = 3; i <= n_init; i++ ){
+
+        
+        int temp_n = 1;
+        while (true)
+        {
+            double temp_h = h / temp_n;
+
+
+            double y1 = res.back().y;
+            double y2 = res.back().y;
+
+            for (int j = 0; j < temp_n; j++) {
+                y1 = res.back().y + temp_h/12.0 * (23 * equa(res.back().x,res.back().y) 
+                - 16*equa(res.at(res.size() - 2).x,res.at(res.size() - 2).y)
+                +5*equa(res.at(res.size() - 3).x,res.at(res.size() - 3).y));
+            }
+            for (int j = 0; j < 2*temp_n; j++) {
+                y2 = res.back().y + temp_h/24.0 * (23 * equa(res.back().x,res.back().y) 
+                - 16*equa(res.at(res.size() - 2).x,res.at(res.size() - 2).y)
+                +5*equa(res.at(res.size() - 3).x,res.at(res.size() - 3).y));
+            }
+
+            double error = fabs(y1 - y2) / 7.0;
+
+            if (error < eps) {
+                        
+                res.push_back({ a + h*(i+1) ,y2 });
+                break;
+            }
+            else
+            {
+                temp_n *= 2;
+            }
+        }
+
+        // x = a + h*(i+1);
+        // solution.push_back({ x ,y });
+
+        // double next_y = res.back().y + h/12.0 * (23 * equa(res.back().x,res.back().y) 
+        // - 16*equa(res.at(res.size() - 2).x,res.at(res.size() - 2).y)
+        // +5*equa(res.at(res.size() - 3).x,res.at(res.size() - 3).y));
+        
+        // res.push_back({a + i * h, next_y});
+    }
+
+    return res;
+}
 
 double get_accurancy(vector<Point> v, double (*goal_fun) (double)) {
     double max_err = 0;
@@ -137,14 +244,10 @@ void TEST1() {
 
     }
 
-    // for (auto p : result2h) {
-    //     out3 << p.x << " " << setprecision(14) << goal_fun(p.x) << endl;
-    // }
-
 
     out1.close();
     out2.close();
-    // out3.close();
+
 }
 
 
@@ -155,30 +258,50 @@ void TEST3(){
     vector<Point> result = {};
     double err = 0;
 
-    for(int i = 10; i > 0; i--){
-        result = adams(equation, Point{ 1,goal_fun(1) - 0.1 *i }, 1, 5, 40);
+    int n = 16;
+    double h = 1.0/n;
+
+    double x_0 = 1;
+
+    for(int i = n; i > 0; i--){
+        result = adams(equation, Point{ x_0,goal_fun(x_0) - h *i }, x_0, 5, 8);
         err = get_accurancy(result, goal_fun);
-        out <<  - 0.1 * i << " " << err << endl;
+        out <<  - h * i << " " << err << endl;
     }
     
 
-    result = adams(equation, Point{ 1,goal_fun(1) }, 1, 5, 40);
+    result = adams(equation, Point{ x_0,goal_fun(x_0) }, x_0, 5, 8);
     err = get_accurancy(result, goal_fun);
     out << 0 << " " << err << endl;
 
-    for(int i = 0; i <= 10; i++){
-        result = adams(equation, Point{ 1,goal_fun(1) + 0.1 *i }, 1, 5, 40);
+    for(int i = 0; i <= n; i++){
+        result = adams(equation, Point{ x_0,goal_fun(x_0) + h *i }, x_0, 5, 8);
         err = get_accurancy(result, goal_fun);
-        out <<  0.1 * i << " " << err << endl;
+        out <<  h * i << " " << err << endl;
     }
 
 
     out.close();
 }
 
+void TEST4(){
+    ofstream out;
+    out.open(PATH"4q.txt");
+
+    for(int i = 1; i < 5; i++){
+        double eps = powf(10,-i);
+        vector<Point> result = adams_adaptive(equation, Point{ 1,goal_fun(1) }, 1, 5, eps,8);
+        double err = get_accurancy(result, goal_fun);
+        out <<  eps << " " << err << endl;
+    }
+
+    out.close();
+}
+
 int main() {
 
-    TEST3();
+    //TEST4();
+
 
     return 0;
 }
