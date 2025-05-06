@@ -259,23 +259,23 @@ void TEST3(){
     double err = 0;
 
     int n = 16;
-    double h = 1.0/n;
+    double h = powf(1.7,-8)/n;
 
     double x_0 = 1;
 
     for(int i = n; i > 0; i--){
-        result = adams(equation, Point{ x_0,goal_fun(x_0) - h *i }, x_0, 5, 8);
+        result = adams(equation, Point{ x_0,goal_fun(x_0) - h *i }, x_0, 5, 512);
         err = get_accurancy(result, goal_fun);
         out <<  - h * i << " " << err << endl;
     }
     
 
-    result = adams(equation, Point{ x_0,goal_fun(x_0) }, x_0, 5, 8);
+    result = adams(equation, Point{ x_0,goal_fun(x_0) }, x_0, 5, 512);
     err = get_accurancy(result, goal_fun);
     out << 0 << " " << err << endl;
 
     for(int i = 0; i <= n; i++){
-        result = adams(equation, Point{ x_0,goal_fun(x_0) + h *i }, x_0, 5, 8);
+        result = adams(equation, Point{ x_0,goal_fun(x_0) + h *i }, x_0, 5, 512);
         err = get_accurancy(result, goal_fun);
         out <<  h * i << " " << err << endl;
     }
@@ -300,7 +300,7 @@ void TEST4(){
 
 int main() {
 
-    //TEST4();
+    TEST3();
 
 
     return 0;
